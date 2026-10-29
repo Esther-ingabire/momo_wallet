@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1043752289163",
+    "project_id": "sawa-wallet",
+    "storage_bucket": "sawa-wallet.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1043752289163:android:16751044804f11acfb658e",
+        "android_client_info": {
+          "package_name": "momo.rw.momo_wallet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARsRpr7iPziCiyJF4TTdKMOctCrzRTF1g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

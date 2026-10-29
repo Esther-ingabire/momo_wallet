@@ -1,14 +1,32 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:momo_wallet/main.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:momo_wallet/logic/wallet_rules.dart';
+import 'package:momo_wallet/models/momo_transaction.dart';
 
 void main() {
-  testWidgets('wallet shows the sample balance', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    await tester.pumpWidget(const SawaApp());
-    await tester.pump();
+  test('balance is worked out from the transactions', () {
+    final newestFirst = [
+      MomoTransaction(
+        description: 'Received from Keza',
+        amount: 4000,
+        isIn: true,
+      ),
+      MomoTransaction(
+        description: 'Sent to 0788123456',
+        amount: 2500,
+        isIn: false,
+      ),
+      MomoTransaction(
+        description: 'Opening balance',
+        amount: 10000,
+        isIn: true,
+      ),
+    ];
 
-    expect(find.text('Sawa Wallet'), findsOneWidget);
-    expect(find.text('6,500 RWF'), findsOneWidget);
+    final stats = statsFor(newestFirst);
+
+    expect(stats.balance, 11500);
+    expect(stats.totalIn, 14000);
+    expect(stats.totalOut, 2500);
+    expect(stats.lowestBalance, 7500);
   });
 }

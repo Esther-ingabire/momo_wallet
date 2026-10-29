@@ -1,8 +1,5 @@
 import 'package:momo_wallet/models/momo_transaction.dart';
 
-// Money the wallet already holds before the first transaction.
-const int openingBalance = 10000;
-
 // Every successful send also records this fee as its own OUT.
 const int sendFee = 100;
 
@@ -29,36 +26,15 @@ class WalletStats {
   final int lowestBalance;
 }
 
-// Newest first, so the wallet list can show this list as it is.
-List<MomoTransaction> sampleTransactions() {
-  return [
-    MomoTransaction(
-      description: 'Received from Aline',
-      amount: 1500,
-      isIn: true,
-    ),
-    MomoTransaction(description: 'Cash out', amount: 9000, isIn: false),
-    MomoTransaction(
-      description: 'Received from Eric',
-      amount: 8000,
-      isIn: true,
-    ),
-    MomoTransaction(
-      description: 'Sent to 0781112233',
-      amount: 4000,
-      isIn: false,
-    ),
-  ];
-}
-
 WalletStats statsFor(List<MomoTransaction> newestFirst) {
-  var balance = openingBalance;
-  // Not 0. The wallet already holds the opening balance, and a later
-  // balance only replaces this when it is actually smaller.
-  var lowest = openingBalance;
+  var balance = 0;
+  var lowest = 0;
+  var started = false;
   var totalIn = 0;
   var totalOut = 0;
 
+  // Oldest first. The opening balance is itself a transaction, so nothing
+  // is added before the list starts.
   for (final transaction in newestFirst.reversed) {
     if (transaction.isIn) {
       balance += transaction.amount;
@@ -67,7 +43,8 @@ WalletStats statsFor(List<MomoTransaction> newestFirst) {
       balance -= transaction.amount;
       totalOut += transaction.amount;
     }
-    if (balance < lowest) lowest = balance;
+    if (!started || balance < lowest) lowest = balance;
+    started = true;
   }
 
   return WalletStats(
@@ -169,9 +146,12 @@ String? deleteProblem(
   List<MomoTransaction> newestFirst,
   MomoTransaction target,
 ) {
-  var balance = openingBalance;
+  var balance = 0;
   for (final transaction in newestFirst.reversed) {
-    if (identical(transaction, target)) continue;
+    final same =
+        transaction.id.isNotEmpty && transaction.id == target.id ||
+        identical(transaction, target);
+    if (same) continue;
     if (transaction.isIn) {
       balance += transaction.amount;
     } else {
