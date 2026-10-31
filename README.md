@@ -1,13 +1,15 @@
 # Sawa Wallet
 
-A MoMo-style wallet for receiving money, sending it, and cashing out. My data is now saved on the phone with shared_preferences, so nothing is lost when the app closes, and it shows today's US dollar rate in RWF from the ExchangeRate API at open.er-api.com.
+Ingabire Esther · 27202 · Group B
+
+Sawa Wallet is a mobile-money app for receiving, sending, and cashing out. It signs users in with Firebase Authentication, and each user's transactions are saved in Cloud Firestore under their own id, so two accounts never see each other's data, and every change appears live.
 
 ## Screenshots
 
-![Before closing](screenshots/before.png)
+![Login](screenshots/login.png)
 
-![After running again](screenshots/after.png)
+![My data in Firestore](screenshots/console.png)
 
-![Live data from an API](screenshots/api.png)
+![Live update](screenshots/live.png)
 
-![No internet](screenshots/no-internet.png)
+![Second account sees nothing of mine](screenshots/denied.png)
