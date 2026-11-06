@@ -15,6 +15,10 @@ each other's data, and every change appears live.
 [Download the latest APK](https://github.com/Esther-ingabire/momo_wallet/releases/latest)
 (for Android phones)
 
+On a phone, scan this code. It downloads the APK.
+
+![Scan to download Sawa Wallet](screenshots/download-qr.png)
+
 ## Features
 - Create an account and log in
 - Receive, send, and cash out, with a receipt photo
