@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:momo_wallet/exchange_rate.dart';
+import 'package:momo_wallet/logic/exchange_rate.dart';
 import 'package:momo_wallet/logic/wallet_rules.dart';
 
 class ExchangeRateCard extends StatefulWidget {

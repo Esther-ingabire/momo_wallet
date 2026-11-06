@@ -1,6 +1,16 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:momo_wallet/auth_gate.dart';
+import 'package:momo_wallet/screens/auth_gate.dart';
+
+// Session 7 names, translated from the guide into this app.
+// Guide                         This app
+// Txn, txn.dart                 MomoTransaction, models/momo_transaction.dart
+// transactions collection       users/{uid}/transactions
+// TxnRepository                 TransactionRepository
+// WalletState                   WalletState
+// balance                       balance, plus total in, total out, and lowest
+// WalletScreen, TxnForm         WalletScreen, ReceiveScreen, SendScreen,
+//                               CashOutScreen, TransactionScreen
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:momo_wallet/logic/wallet_cloud.dart';
+import 'package:momo_wallet/repositories/transaction_repository.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -36,7 +36,9 @@ class _LoginScreenState extends State<LoginScreen> {
           email: _email.text.trim(),
           password: _password.text,
         );
-        await addSampleTransactions();
+        // The brain does not exist yet. It is created a moment later,
+        // when the gate sees this new user.
+        await TransactionRepository(auth.currentUser!.uid).addSamples();
       } else {
         await auth.signInWithEmailAndPassword(
           email: _email.text.trim(),

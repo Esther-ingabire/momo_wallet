@@ -1,12 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:momo_wallet/logic/wallet_rules.dart';
 import 'package:momo_wallet/models/momo_transaction.dart';
+import 'package:momo_wallet/state/wallet_state.dart';
+import 'package:momo_wallet/ui/receipt_photo.dart';
 import 'package:momo_wallet/ui/show_message.dart';
+import 'package:provider/provider.dart';
 
 class CashOutScreen extends StatefulWidget {
-  const CashOutScreen({super.key, required this.balance});
-
-  final int balance;
+  const CashOutScreen({super.key});
 
   @override
   State<CashOutScreen> createState() => _CashOutScreenState();
@@ -16,6 +19,8 @@ class _CashOutScreenState extends State<CashOutScreen> {
   final amountController = TextEditingController();
   List<NoteLine> notes = [];
   int? preparedAmount;
+  File? _photo;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -47,7 +52,7 @@ class _CashOutScreenState extends State<CashOutScreen> {
     });
   }
 
-  void confirm() {
+  Future<void> confirm() async {
     final problem = cashOutAmountProblem(amountController.text);
     if (problem != null) {
       showMessage(context, problem);
@@ -60,28 +65,53 @@ class _CashOutScreenState extends State<CashOutScreen> {
       return;
     }
 
-    final balanceProblem = cashOutBalanceProblem(amount, widget.balance);
+    final balanceProblem = cashOutBalanceProblem(
+      amount,
+      context.read<WalletState>().balance,
+    );
     if (balanceProblem != null) {
       showMessage(context, balanceProblem);
       return;
     }
 
-    Navigator.pop(
-      context,
-      MomoTransaction(description: 'Cash out', amount: amount, isIn: false),
-    );
+    final wallet = context.read<WalletState>();
+    setState(() => _saving = true);
+    try {
+      String? photoUrl;
+      if (_photo != null) {
+        photoUrl = await wallet.uploadPhoto(_photo!);
+      }
+      if (!mounted) return;
+      Navigator.pop(
+        context,
+        MomoTransaction(
+          description: 'Cash out',
+          amount: amount,
+          isIn: false,
+          photoUrl: photoUrl,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      showMessage(context, 'Could not save the photo. $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final short = preparedAmount != null && preparedAmount! > widget.balance;
+    final balance = context.watch<WalletState>().balance;
+    final short = preparedAmount != null && preparedAmount! > balance;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Cash out')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Balance: ${rwf(widget.balance)} RWF'),
+          Text(
+            'Your balance: ${rwf(balance)} RWF',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           const Text(
             'The agent has 5,000, 2,000, 1,000, 500 and 100 RWF notes. The amount must be a multiple of 100.',
@@ -132,9 +162,15 @@ class _CashOutScreenState extends State<CashOutScreen> {
               ),
           ],
           const SizedBox(height: 8),
+          ReceiptPhoto(
+            photo: _photo,
+            busy: _saving,
+            onPicked: (file) => setState(() => _photo = file),
+          ),
+          const SizedBox(height: 8),
           FilledButton(
-            onPressed: confirm,
-            child: const Text('Confirm cash out'),
+            onPressed: _saving ? null : confirm,
+            child: Text(_saving ? 'Saving...' : 'Confirm cash out'),
           ),
         ],
       ),

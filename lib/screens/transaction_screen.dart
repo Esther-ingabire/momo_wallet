@@ -1,18 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:momo_wallet/logic/wallet_cloud.dart';
 import 'package:momo_wallet/logic/wallet_rules.dart';
 import 'package:momo_wallet/models/momo_transaction.dart';
+import 'package:momo_wallet/state/wallet_state.dart';
+import 'package:momo_wallet/ui/receipt_photo.dart';
 import 'package:momo_wallet/ui/show_message.dart';
+import 'package:provider/provider.dart';
 
 class TransactionScreen extends StatefulWidget {
-  const TransactionScreen({
-    super.key,
-    required this.transaction,
-    required this.transactions,
-  });
+  const TransactionScreen({super.key, required this.transaction});
 
   final MomoTransaction transaction;
-  final List<MomoTransaction> transactions;
 
   @override
   State<TransactionScreen> createState() => _TransactionScreenState();
@@ -20,6 +19,8 @@ class TransactionScreen extends StatefulWidget {
 
 class _TransactionScreenState extends State<TransactionScreen> {
   late final TextEditingController descriptionController;
+  File? _photo;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -41,20 +42,34 @@ class _TransactionScreenState extends State<TransactionScreen> {
       showMessage(context, 'Description cannot be empty');
       return;
     }
-    await updateTransaction(
-      MomoTransaction(
-        id: widget.transaction.id,
-        description: description,
-        amount: widget.transaction.amount,
-        isIn: widget.transaction.isIn,
-        createdAt: widget.transaction.createdAt,
-      ),
-    );
-    if (!mounted) return;
-    Navigator.pop(context);
+    final wallet = context.read<WalletState>();
+    setState(() => _saving = true);
+    try {
+      var photoUrl = widget.transaction.photoUrl;
+      if (_photo != null) {
+        photoUrl = await wallet.uploadPhoto(_photo!);
+      }
+      await wallet.edit(
+        MomoTransaction(
+          id: widget.transaction.id,
+          description: description,
+          amount: widget.transaction.amount,
+          isIn: widget.transaction.isIn,
+          createdAt: widget.transaction.createdAt,
+          photoUrl: photoUrl,
+        ),
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      showMessage(context, 'Could not save the photo. $e');
+    }
   }
 
   Future<void> remove() async {
+    final wallet = context.read<WalletState>();
     final sure = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -73,18 +88,19 @@ class _TransactionScreenState extends State<TransactionScreen> {
       ),
     );
     if (sure != true || !mounted) return;
-    final problem = deleteProblem(widget.transactions, widget.transaction);
+    final problem = deleteProblem(wallet.transactions, widget.transaction);
     if (problem != null) {
       showMessage(context, problem);
       return;
     }
-    await deleteTransactionDoc(widget.transaction.id);
+    await wallet.remove(widget.transaction);
     if (!mounted) return;
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final balance = context.watch<WalletState>().balance;
     final incoming = widget.transaction.isIn;
     final color = incoming ? const Color(0xFF157A45) : const Color(0xFFB4332A);
 
@@ -93,6 +109,11 @@ class _TransactionScreenState extends State<TransactionScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Text(
+            'Your balance: ${rwf(balance)} RWF',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -127,7 +148,17 @@ class _TransactionScreenState extends State<TransactionScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          FilledButton(onPressed: save, child: const Text('Save')),
+          ReceiptPhoto(
+            photo: _photo,
+            savedUrl: widget.transaction.photoUrl,
+            busy: _saving,
+            onPicked: (file) => setState(() => _photo = file),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: _saving ? null : save,
+            child: Text(_saving ? 'Saving...' : 'Save'),
+          ),
           const SizedBox(height: 8),
           OutlinedButton(onPressed: remove, child: const Text('Delete')),
         ],
